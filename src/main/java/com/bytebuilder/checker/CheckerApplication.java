@@ -6,8 +6,8 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
 @SpringBootApplication
 public class CheckerApplication {
 
-	public static void main(String[] args) {
-		SpringApplication.run(CheckerApplication.class, args);
-	}
+    public static void main(String[] args) {
+        SpringApplication.run(CheckerApplication.class, args);
+    }
 
 }
