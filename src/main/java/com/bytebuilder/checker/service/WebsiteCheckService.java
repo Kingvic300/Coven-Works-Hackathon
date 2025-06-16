@@ -2,9 +2,13 @@ package com.bytebuilder.checker.service;
 
 import com.google.gson.Gson;
 import com.google.gson.JsonObject;
+import lombok.Data;
 import lombok.RequiredArgsConstructor;
+import org.jsoup.Jsoup;
+import org.jsoup.nodes.Document;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import okhttp3.*;
@@ -18,21 +22,157 @@ import java.security.NoSuchAlgorithmException;
 import java.security.cert.Certificate;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
+import java.util.Arrays;
+import java.util.HashSet;
 import java.util.Objects;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 @Service
-@RequiredArgsConstructor
 public class WebsiteCheckService {
     private static final Logger LOGGER = LoggerFactory.getLogger(WebsiteCheckService.class);
 
-    private final OkHttpClient client;
-    private final Gson gson;
+    private  OkHttpClient client;
+    private  Gson gson;
 
     @Value("${virustotal.api.key}")
     private String virusTotalApiKey;
 
     @Value("${virustotal.poll.delay:3000}")
     private long pollDelayMillis;
+
+    @Autowired
+    public WebsiteCheckService(OkHttpClient client, Gson gson) {
+        this.client = client;
+        this.gson = gson;
+    }
+
+
+    // Common scam keywords for text analysis
+    private static final Set<String> SCAM_KEYWORDS = new HashSet<>(Arrays.asList(
+            "get rich quick", "urgent action required", "free money", "win a prize",
+            "verify your account now", "limited time offer", "click here to claim"
+    ));
+
+    @Data
+    public static class WebsiteAnalysisResult {
+        private String url;
+        private String description;
+        private boolean isSecure;
+        private boolean isSafeFromScams;
+        private boolean isTextSafe;
+        private String safetyMessage;
+
+
+
+        public WebsiteAnalysisResult(String url, String description, boolean isSecure,
+                                     boolean isSafeFromScams, boolean isTextSafe, String safetyMessage) {
+            this.url = url;
+            this.description = description;
+            this.isSecure = isSecure;
+            this.isSafeFromScams = isSafeFromScams;
+            this.isTextSafe = isTextSafe;
+            this.safetyMessage = safetyMessage;
+        }
+        public String getDescription() {
+            return this.description;
+        }
+    }
+
+
+    public WebsiteAnalysisResult analyzeWebsite(String urlString) {
+        try {
+            // Validate and normalize URL
+            URI uri = new URI(urlString);
+            String normalizedUrl = uri.toString();
+
+            // Check HTTPS security
+            boolean isSecure = isSecure(normalizedUrl);
+            // Check VirusTotal for scams
+            boolean isSafeFromScams = isSafeFromScams(normalizedUrl);
+            // Scrape website and analyze content
+            String[] contentAnalysis = analyzeWebsiteContent(normalizedUrl);
+            String description = contentAnalysis[0];
+            boolean isTextSafe = Boolean.parseBoolean(contentAnalysis[1]);
+
+            // Determine overall safety message
+            String safetyMessage = determineSafetyMessage(isSecure, isSafeFromScams, isTextSafe);
+
+            return new WebsiteAnalysisResult(normalizedUrl, description, isSecure,
+                    isSafeFromScams, isTextSafe, safetyMessage);
+
+        } catch (Exception e) {
+            LOGGER.error("Failed to analyze website: {}", urlString, e);
+            return new WebsiteAnalysisResult(urlString, "Unable to generate description",
+                    false, false, false, "Analysis failed due to error");
+        }
+    }
+
+    private String[] analyzeWebsiteContent(String urlString) {
+        try {
+            // Scrape website content
+            Document doc = Jsoup.connect(urlString).timeout(10000).get();
+
+            // Extract relevant text for description
+            String title = doc.title();
+            String metaDescription = doc.select("meta[name=description]").attr("content");
+            String heading = doc.select("h1").text();
+            String bodyText = doc.select("p").stream()
+                    .map(element -> element.text().trim())
+                    .filter(text -> !text.isEmpty())
+                    .limit(3)
+                    .collect(Collectors.joining(" "));
+
+            // Generate description (simple concatenation with length limit)
+            String rawDescription = (title + " " + metaDescription + " " + heading + " " + bodyText).trim();
+            String description = rawDescription.length() > 200
+                    ? rawDescription.substring(0, 197) + "..."
+                    : rawDescription;
+
+            if (description.isEmpty()) {
+                description = "No description available";
+            }
+
+            // Check for scam keywords
+            boolean isTextSafe = isTextSafe(rawDescription.toLowerCase());
+
+            // Optional: Integrate advanced NLP (e.g., Hugging Face Transformers)
+            // Example: Use a summarization model to generate a more concise description
+            // String summarizedDescription = summarizeWithNLP(rawDescription);
+
+            LOGGER.info("Generated description for URL: {}, description: {}", urlString, description);
+            return new String[]{description, String.valueOf(isTextSafe)};
+
+        } catch (IOException e) {
+            LOGGER.error("Failed to scrape website content: {}", urlString, e);
+            return new String[]{"Unable to scrape content", "false"};
+        }
+    }
+
+    private boolean isTextSafe(String text) {
+        // Simple keyword-based scam detection
+        for (String keyword : SCAM_KEYWORDS) {
+            if (text.contains(keyword.toLowerCase())) {
+                LOGGER.warn("Detected potential scam keyword '{}' in website content", keyword);
+                return false;
+            }
+        }
+        // Optional: Integrate sentiment analysis or advanced NLP for better scam detection
+        // Example: Use a classifier to detect phishing intent
+        return true;
+    }
+
+    private String determineSafetyMessage(boolean isSecure, boolean isSafeFromScams, boolean isTextSafe) {
+        if (isSecure && isSafeFromScams && isTextSafe) {
+            return "Website is likely safe";
+        } else if (!isSecure) {
+            return "Website is potentially unsafe due to lack of HTTPS";
+        } else if (!isSafeFromScams) {
+            return "Website is potentially unsafe based on VirusTotal scan";
+        } else {
+            return "Website is potentially unsafe due to suspicious content";
+        }
+    }
 
     public boolean isSecure(String urlString) {
         HttpsURLConnection connection = null;
@@ -46,13 +186,13 @@ public class WebsiteCheckService {
             URL url = uri.toURL();
             connection = (HttpsURLConnection) url.openConnection();
 
-
+            // Set up SSL context for enhanced certificate validation
             SSLContext sslContext = SSLContext.getInstance("TLS");
             HttpsURLConnection finalConnection = connection;
             sslContext.init(null, new TrustManager[]{new X509TrustManager() {
                 @Override
                 public void checkClientTrusted(X509Certificate[] chain, String authType) {
-
+                    // Not needed for server certificate validation
                 }
 
                 @Override
@@ -103,7 +243,6 @@ public class WebsiteCheckService {
 
     public boolean isSafeFromScams(String urlString) {
         try {
-
             FormBody formBody = new FormBody.Builder()
                     .add("url", urlString)
                     .build();
@@ -114,8 +253,7 @@ public class WebsiteCheckService {
                     .addHeader("x-apikey", virusTotalApiKey)
                     .build();
 
-            try (Response scanResponse = client.newCall(scanRequest).execute())
-            {
+            try (Response scanResponse = client.newCall(scanRequest).execute()) {
                 if (!scanResponse.isSuccessful()) {
                     LOGGER.warn("VirusTotal scan request failed for URL: {}, status: {}", urlString, scanResponse.code());
                     return false;
@@ -151,7 +289,7 @@ public class WebsiteCheckService {
                 } while (status.equals("queued") && attempt < maxAttempts);
 
                 if (!status.equals("completed")) {
-                    LOGGER.warn("Virus Applies to all VirusTotal analysis not completed for URL: {}", urlString);
+                    LOGGER.warn("VirusTotal analysis not completed for URL: {}", urlString);
                     return false;
                 }
 

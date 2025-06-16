@@ -25,6 +25,8 @@ public class WebsiteCheckController {
 
         boolean isSecure = websiteCheckService.isSecure(url);
         boolean isSafe = websiteCheckService.isSafeFromScams(url);
+        String description = websiteCheckService.analyzeWebsite(url).getDescription();
+        System.out.println(description);
         String message = isSecure && isSafe ? "Website is likely safe" : "Website is potentially unsafe";
 
         WebsiteCheckResponse response = new WebsiteCheckResponse(url, isSecure, isSafe, message);
