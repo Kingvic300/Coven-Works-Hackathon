@@ -2,6 +2,7 @@ package com.bytebuilder.checker.service;
 
 import com.google.gson.Gson;
 import com.google.gson.JsonObject;
+import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.RequiredArgsConstructor;
 import org.jsoup.Jsoup;
@@ -25,10 +26,12 @@ import java.security.cert.X509Certificate;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 
 @Service
+@AllArgsConstructor
 public class WebsiteCheckService {
     private static final Logger LOGGER = LoggerFactory.getLogger(WebsiteCheckService.class);
 
@@ -54,7 +57,6 @@ public class WebsiteCheckService {
             "verify your account now", "limited time offer", "click here to claim"
     ));
 
-    @Data
     public static class WebsiteAnalysisResult {
         private String url;
         private String description;
@@ -76,6 +78,26 @@ public class WebsiteCheckService {
         }
         public String getDescription() {
             return this.description;
+        }
+
+        public String getSafetyMessage() {
+            return safetyMessage;
+        }
+
+        public boolean isSafeFromScams() {
+            return isSafeFromScams;
+        }
+
+        public boolean isSecure() {
+            return isSecure;
+        }
+
+        public boolean isTextSafe() {
+            return isTextSafe;
+        }
+
+        public String getUrl() {
+            return this.url;
         }
     }
 
@@ -188,20 +210,17 @@ public class WebsiteCheckService {
 
             // Set up SSL context for enhanced certificate validation
             SSLContext sslContext = SSLContext.getInstance("TLS");
-            HttpsURLConnection finalConnection = connection;
             sslContext.init(null, new TrustManager[]{new X509TrustManager() {
                 @Override
-                public void checkClientTrusted(X509Certificate[] chain, String authType) {
-                    // Not needed for server certificate validation
-                }
+                public void checkClientTrusted(X509Certificate[] chain, String authType) { }
 
                 @Override
                 public void checkServerTrusted(X509Certificate[] chain, String authType) throws CertificateException {
+                    if (chain == null || chain.length == 0) {
+                        throw new CertificateException("No server certificates found");
+                    }
                     for (X509Certificate cert : chain) {
                         cert.checkValidity();
-                    }
-                    if (!HttpsURLConnection.getDefaultHostnameVerifier().verify(uri.getHost(), finalConnection.getSSLSession().get())) {
-                        throw new CertificateException("Hostname verification failed for " + uri.getHost());
                     }
                 }
 

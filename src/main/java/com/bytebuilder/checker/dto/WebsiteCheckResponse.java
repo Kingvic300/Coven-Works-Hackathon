@@ -1,47 +1,52 @@
 package com.bytebuilder.checker.dto;
 
+import lombok.AllArgsConstructor;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
+
+@Getter
+@Setter
 public class WebsiteCheckResponse {
-    private String url;
-    private boolean isSecure;
-    private boolean isSafe;
-    private String message;
+    private  String url;
+    private  String description;
+    private  boolean isSecure;
+    private  boolean isSafeFromScams;
+    private  boolean isTextSafe;
+    private  String safetyMessage;
 
-    public WebsiteCheckResponse(String url, boolean isSecure, boolean isSafe, String message) {
+    // Constructors in case the lombok doesnt work for you --- Akerele
+
+    public WebsiteCheckResponse(String url, String description, boolean isSecure,
+                                 boolean isSafeFromScams, boolean isTextSafe, String safetyMessage) {
         this.url = url;
+        this.description = description;
         this.isSecure = isSecure;
-        this.isSafe = isSafe;
-        this.message = message;
+        this.isSafeFromScams = isSafeFromScams;
+        this.isTextSafe = isTextSafe;
+        this.safetyMessage = safetyMessage;
     }
-
     public String getUrl() {
         return url;
     }
 
-    public void setUrl(String url) {
-        this.url = url;
+    public String getDescription() {
+        return description;
     }
 
     public boolean isSecure() {
         return isSecure;
     }
 
-    public void setSecure(boolean secure) {
-        isSecure = secure;
+    public boolean isSafeFromScams() {
+        return isSafeFromScams;
     }
 
-    public boolean isSafe() {
-        return isSafe;
+    public boolean isTextSafe() {
+        return isTextSafe;
     }
 
-    public void setSafe(boolean safe) {
-        isSafe = safe;
-    }
-
-    public String getMessage() {
-        return message;
-    }
-
-    public void setMessage(String message) {
-        this.message = message;
+    public String getSafetyMessage() {
+        return safetyMessage;
     }
 }
