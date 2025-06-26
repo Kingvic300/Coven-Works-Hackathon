@@ -4,8 +4,8 @@ import com.bytebuilder.checker.dto.AsyncCheckResponse;
 import com.bytebuilder.checker.dto.HealthCheckResponse;
 import com.bytebuilder.checker.dto.WebsiteCheckRequest;
 import com.bytebuilder.checker.dto.WebsiteCheckResponse;
-import com.bytebuilder.checker.service.WebsiteCheckService;
 import com.bytebuilder.checker.dto.WebsiteAnalysisResult;
+import com.bytebuilder.checker.service.WebsiteCheckService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
@@ -19,9 +19,9 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
-
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ConcurrentHashMap;
 
 @Slf4j
 @RestController
@@ -32,6 +32,7 @@ import java.util.concurrent.CompletableFuture;
 public class WebsiteCheckController {
 
     private final WebsiteCheckService websiteCheckService;
+    private final ConcurrentHashMap<String, CompletableFuture<WebsiteAnalysisResult>> asyncResults = new ConcurrentHashMap<>();
 
     @PostMapping("/check")
     @Operation(
@@ -62,27 +63,69 @@ public class WebsiteCheckController {
     @Operation(
             summary = "Analyze website security asynchronously",
             description = "Starts asynchronous analysis and returns immediately with a tracking ID. " +
-                    "A separate endpoint would be needed to retrieve results using the tracking ID."
+                    "Use the /check-async/{trackingId} endpoint to retrieve results."
     )
+    @ApiResponse(responseCode = "202", description = "Analysis started successfully")
+    @ApiResponse(responseCode = "400", description = "Invalid request parameters")
     public ResponseEntity<AsyncCheckResponse> checkWebsiteAsync(
             @Valid @RequestBody WebsiteCheckRequest request) {
 
         log.info("Received async website check request for URL: {}", request.getUrl());
 
-
+        String trackingId = generateTrackingId();
         CompletableFuture<WebsiteAnalysisResult> futureResult =
                 websiteCheckService.analyzeWebsiteAsync(request.getUrl());
 
-        String trackingId = generateTrackingId();
-
-        // Simulate storing the future (in production, you'd store the result or a reference)
-        // For simplicity in this example, we just return the ID.
-        // A dedicated service would manage the actual async task lifecycle.
-        // futureResult.thenAccept(result -> { /* Store result with trackingId */ });
-
+        // Store the future for later retrieval
+        asyncResults.put(trackingId, futureResult);
 
         return ResponseEntity.accepted()
                 .body(new AsyncCheckResponse(trackingId, "Analysis started successfully.", request.getUrl()));
+    }
+
+    @GetMapping("/check-async/{trackingId}")
+    @Operation(
+            summary = "Retrieve asynchronous analysis result",
+            description = "Fetches the result of an asynchronous website analysis using the tracking ID"
+    )
+    @ApiResponse(responseCode = "200", description = "Analysis result retrieved successfully")
+    @ApiResponse(responseCode = "202", description = "Analysis is still in progress")
+    @ApiResponse(responseCode = "404", description = "Tracking ID not found")
+    public ResponseEntity<?> getAsyncResult(
+            @Parameter(description = "Tracking ID of the asynchronous analysis")
+            @PathVariable @NotBlank String trackingId) {
+
+        log.info("Received request to retrieve async result for tracking ID: {}", trackingId);
+
+        CompletableFuture<WebsiteAnalysisResult> futureResult = asyncResults.get(trackingId);
+
+        if (futureResult == null) {
+            log.warn("No analysis found for tracking ID: {}", trackingId);
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                    .body(new AsyncCheckResponse(trackingId, "No analysis found for the given tracking ID.", null));
+        }
+
+        if (!futureResult.isDone()) {
+            log.info("Analysis still in progress for tracking ID: {}", trackingId);
+            return ResponseEntity.status(HttpStatus.ACCEPTED)
+                    .body(new AsyncCheckResponse(trackingId, "Analysis is still in progress.", null));
+        }
+
+        try {
+            WebsiteAnalysisResult analysisResult = futureResult.get();
+            WebsiteCheckResponse response = convertToResponse(analysisResult);
+            log.info("Async analysis completed for tracking ID: {}, URL: {}, safe: {}",
+                    trackingId, response.getUrl(), response.isOverallSafe());
+
+            // Clean up the stored future
+            asyncResults.remove(trackingId);
+
+            return ResponseEntity.ok(response);
+        } catch (Exception e) {
+            log.error("Error retrieving async result for tracking ID: {}", trackingId, e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(new AsyncCheckResponse(trackingId, "Error retrieving analysis result.", null));
+        }
     }
 
     @GetMapping("/check")
@@ -131,7 +174,7 @@ public class WebsiteCheckController {
         return result.isSecure() &&
                 result.isSafeFromScams() &&
                 result.isTextSafe() &&
-                !result.isUrlSuspicious(); // A suspicious URL makes it unsafe
+                !result.isUrlSuspicious();
     }
 
     // Generates a unique tracking ID
