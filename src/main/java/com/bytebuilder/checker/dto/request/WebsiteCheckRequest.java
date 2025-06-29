@@ -1,4 +1,4 @@
-package com.bytebuilder.checker.dto;
+package com.bytebuilder.checker.dto.request;
 
 public class WebsiteCheckRequest {
     private String url;

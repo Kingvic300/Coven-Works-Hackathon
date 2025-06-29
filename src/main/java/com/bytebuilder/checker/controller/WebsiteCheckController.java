@@ -1,8 +1,8 @@
 package com.bytebuilder.checker.controller;
 
 
-import com.bytebuilder.checker.dto.WebsiteCheckRequest;
 import com.bytebuilder.checker.dto.WebsiteCheckResponse;
+import com.bytebuilder.checker.dto.request.WebsiteCheckRequest;
 import com.bytebuilder.checker.service.WebsiteCheckService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
