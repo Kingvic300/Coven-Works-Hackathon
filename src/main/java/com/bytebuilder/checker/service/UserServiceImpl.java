@@ -22,11 +22,8 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
-import org.springframework.web.multipart.MultipartFile;
 
-import java.io.IOException;
 import java.time.LocalDateTime;
-import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -103,16 +100,6 @@ public class UserServiceImpl implements UserService{
 
         return UserMapper.mapToCreatedUserResponse(jwtToken,user,"Registration Successful");
     }
-    @Override
-    public UploadResponse uploadFile(MultipartFile file) throws IOException {
-        var cloud = cloudinary
-                .uploader()
-                .upload(file.getBytes(), Map.of("public_id",UUID.randomUUID().toString()))
-                .get("url")
-                .toString();
-        return UserMapper.mapToUploadResponse("Image has been uploaded successfully", cloud);
-    }
-
     @Override
     public LoginResponse login(LoginRequest loginRequest){
         authenticationManager.authenticate(
