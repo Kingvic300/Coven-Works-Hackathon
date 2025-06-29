@@ -17,7 +17,6 @@ import com.bytebuilder.checker.exception.InvalidOtpException;
 import com.bytebuilder.checker.exception.OtpExpiredException;
 import com.bytebuilder.checker.exception.UserNotFoundException;
 import com.bytebuilder.checker.util.JwtUtil;
-import com.cloudinary.Cloudinary;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -64,8 +63,6 @@ class UserServiceImplTest {
     @Mock
     private OTPRepository otpRepository;
 
-    @Mock
-    private Cloudinary cloudinary;
 
     @InjectMocks
     private UserServiceImpl userService;
@@ -81,7 +78,6 @@ class UserServiceImplTest {
 
     private User existingGoogleUser;
     private User newGoogleUser;
-    private LoginResponse expectedGoogleResponse;
     private final String validEmail = "test@gmail.com";
     private final String validName = "Test User";
     private final String jwtToken = "mock.jwt.token";
@@ -125,7 +121,6 @@ class UserServiceImplTest {
         otp.setOtp("123456");
         otp.setExpiresAt(LocalDateTime.now().plusMinutes(30));
 
-        // Setup Google login test data
         existingGoogleUser = new User();
         existingGoogleUser.setId("1L");
         existingGoogleUser.setEmail(validEmail);
@@ -140,7 +135,7 @@ class UserServiceImplTest {
         newGoogleUser.setGoogleUser(true);
         newGoogleUser.setActive(true);
 
-        expectedGoogleResponse = new LoginResponse();
+        LoginResponse expectedGoogleResponse = new LoginResponse();
         expectedGoogleResponse.setToken(jwtToken);
         expectedGoogleResponse.setMessage("Login was successful");
     }

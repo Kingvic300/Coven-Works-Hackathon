@@ -95,19 +95,6 @@ public class UserController {
         }
 
     }
-    @PostMapping("/upload-picture")
-    public ResponseEntity<UploadResponse> uploadPicture(@RequestParam("file") MultipartFile file) {
-        try {
-            UploadResponse response = userService.uploadFile(file);
-            return ResponseEntity.ok(response);
-        } catch (IOException e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body(new UploadResponse("Upload failed: " + e.getMessage(), null));
-        } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body(new UploadResponse("Unexpected error: " + e.getMessage(), null));
-        }
-    }
     @GetMapping("/{userId}")
     public ResponseEntity<UserDto> findUserById(@PathVariable String userId){
         FoundResponse userFound = userService.findUserById(userId);
