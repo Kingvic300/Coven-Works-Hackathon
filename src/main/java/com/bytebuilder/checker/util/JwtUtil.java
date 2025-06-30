@@ -1,6 +1,5 @@
 package com.bytebuilder.checker.util;
 
-import io.github.cdimascio.dotenv.Dotenv;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.SignatureAlgorithm;
@@ -25,22 +24,22 @@ public class JwtUtil {
     public String extractUserName(String jwtToken) {
         return extractClaims(jwtToken, Claims::getSubject);
     }
+
     public String generateToken(UserDetails userDetails) {
         return generateToken(new HashMap<>(), userDetails);
     }
-    public String generateToken(
-            Map<String, Object> extractClaims,
-            UserDetails userDetails
-    ){
+
+    public String generateToken(Map<String, Object> extractClaims, UserDetails userDetails) {
         return Jwts
                 .builder()
                 .setClaims(extractClaims)
                 .setSubject(userDetails.getUsername())
                 .setIssuedAt(new Date(System.currentTimeMillis()))
-                .setExpiration(new Date(System.currentTimeMillis() + 3000 * 60 * 24))
+                .setExpiration(new Date(System.currentTimeMillis() + 1000 * 60 * 60 * 24)) // 24 hours
                 .signWith(getSignInKey(), SignatureAlgorithm.HS256)
                 .compact();
     }
+
     public boolean isValidToken(String token, UserDetails userDetails) {
         final String username = extractUserName(token);
         return (username.equals(userDetails.getUsername())) && !isTokenExpired(token);
@@ -63,6 +62,7 @@ public class JwtUtil {
             throw new RuntimeException("Invalid token: " + e.getMessage());
         }
     }
+
     private Claims extractAllClaims(String jwtToken) {
         return Jwts
                 .parserBuilder()
