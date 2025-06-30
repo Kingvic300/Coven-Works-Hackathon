@@ -1,4 +1,4 @@
-package com.bytebuilder.checker.utils;
+package com.bytebuilder.checker.util;
 
 import com.bytebuilder.checker.dto.ErrorResponse; // Ensure this import is correct
 import lombok.extern.slf4j.Slf4j;
