@@ -13,7 +13,6 @@ import com.bytebuilder.checker.exception.*;
 import com.bytebuilder.checker.mapper.UserMapper;
 import com.bytebuilder.checker.util.JwtUtil;
 import com.bytebuilder.checker.util.OTPGenerator;
-import com.cloudinary.Cloudinary;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -39,7 +38,6 @@ public class UserServiceImpl implements UserService{
     private final PasswordEncoder passwordEncoder;
     private final AuthenticationManager authenticationManager;
     private final OTPRepository otpRepository;
-    private final Cloudinary cloudinary;
 
 
     @Override
