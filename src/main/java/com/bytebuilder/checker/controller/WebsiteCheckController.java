@@ -3,6 +3,7 @@ package com.bytebuilder.checker.controller;
 import com.bytebuilder.checker.dto.request.WebsiteCheckRequest;
 import com.bytebuilder.checker.dto.WebsiteCheckResponse;
 import com.bytebuilder.checker.dto.response.WebsiteAnalysisResult;
+import com.bytebuilder.checker.exception.NoUrlPassedException;
 import com.bytebuilder.checker.service.WebsiteCheckService;
 import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
@@ -28,19 +29,8 @@ public class WebsiteCheckController {
         String url = request.getUrl();
 
         if (url == null || url.trim().isEmpty()) {
-            return ResponseEntity.badRequest().body(
-                    WebsiteCheckResponse.builder()
-                            .url(url)
-                            .description("N/A")
-                            .isSecure(false)
-                            .isSafeFromScams(false)
-                            .isTextSafe(false)
-                            .isUrlSuspicious(true)
-                            .overallSafe(false)
-                            .message("Invalid URL provided")
-                            .analyzedAt(Instant.now())
-                            .build()
-            );
+            log.error("Received empty URL in request");
+            throw new NoUrlPassedException("No URL provided for website check.");
         }
 
         log.info("Received website check request for URL: {}", url);
@@ -60,9 +50,9 @@ public class WebsiteCheckController {
                 .isSecure(result.isSecure())
                 .isSafeFromScams(result.isSafeFromScams())
                 .isTextSafe(result.isTextSafe())
-                .isUrlSuspicious(!result.isSafeFromScams()) // simple logic: if not safe, suspicious
+                .isUrlSuspicious(!result.isSafeFromScams())
                 .overallSafe(overallSafe)
-                .message(generateSafetyMessage(result))
+                .message(result.getSafetyMessage())
                 .analyzedAt(Instant.now())
                 .additionalInfo(extraInfo)
                 .build();
@@ -70,12 +60,5 @@ public class WebsiteCheckController {
         log.info("Website analysis completed for URL: {}, overallSafe: {}", url, response.isOverallSafe());
 
         return ResponseEntity.ok(response);
-    }
-
-    private String generateSafetyMessage(WebsiteAnalysisResult result) {
-        if (!result.isSecure()) return "This website does not use HTTPS securely.";
-        if (!result.isSafeFromScams()) return "Potential malware or phishing detected.";
-        if (!result.isTextSafe()) return "Website contains suspicious or unsafe content.";
-        return "Website appears safe and secure.";
     }
 }
