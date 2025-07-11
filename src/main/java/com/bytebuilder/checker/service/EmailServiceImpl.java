@@ -18,6 +18,7 @@ import org.springframework.stereotype.Service;
 public class EmailServiceImpl implements EmailService {
 
     private final JavaMailSender mailSender;
+    private final SpamEmailDetector spamEmailDetector;
 
     @Value("${spring.mail.username}")
     private String fromEmail;
@@ -103,5 +104,25 @@ public class EmailServiceImpl implements EmailService {
                 </body>
                 </html>
                 """.formatted(otp, OTP_EXPIRY_MINUTES);
+    }
+
+    @Override
+    public boolean checkIncomingEmailForSpam(String subject, String content, String sender) {
+        log.info("Checking incoming email for spam - Subject: {}, Sender: {}", subject, sender);
+        
+        try {
+            SpamEmailDetector.SpamAnalysisResult result = spamEmailDetector.analyzeEmail(subject, content, sender, "");
+            
+            if (result.isSpam()) {
+                log.warn("Spam detected in incoming email - Subject: {}, Sender: {}, Score: {}", 
+                        subject, sender, result.getSpamScore());
+            }
+            
+            return result.isSpam();
+        } catch (Exception e) {
+            log.error("Error checking email for spam: {}", e.getMessage());
+            // If spam detection fails, allow the email through but log the error
+            return false;
+        }
     }
 }

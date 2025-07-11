@@ -10,6 +10,12 @@ GET /api/v1/website/check-async/{trackingId}: Retrieve async analysis results
 GET /api/v1/website/check?url={url}: Quick check
 GET /api/v1/website/health: Health check
 
+Email Spam Detection:
+POST /api/v1/email/check-spam: Analyze email for spam
+POST /api/v1/email/bulk-check: Bulk email spam analysis
+POST /api/v1/email/quick-check: Quick high-priority spam check
+GET /api/v1/email/spam-keywords: Get spam keywords list
+
 
 HTTPS Validation: Verifies SSL/TLS certificates using OkHttp.
 Scam Detection: Uses VirusTotal API for malware and phishing scans.
@@ -17,6 +23,15 @@ Suspicious URL Patterns: Detects risky URLs (e.g., IP addresses, typosquatting).
 NLP Content Analysis:
 Sentiment analysis, scam keyword detection, phishing pattern matching.
 Legitimacy scoring and extractive summarization.
+
+Email Spam Detection:
+Keyword-based spam detection with 40+ spam keywords.
+Pattern matching for phishing and scam emails.
+Sender reputation analysis and suspicious domain detection.
+Content analysis with legitimacy scoring.
+High-risk spam identification and blocking.
+Bulk email analysis for multiple emails.
+Automatic URL analysis using website safety checker for links in emails.
 
 
 Asynchronous Processing: Uses CompletableFuture for non-blocking analysis, with in-memory storage for results.
