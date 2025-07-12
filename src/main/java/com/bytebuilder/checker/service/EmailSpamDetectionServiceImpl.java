@@ -2,9 +2,11 @@ package com.bytebuilder.checker.service;
 
 import com.bytebuilder.checker.dto.EmailSpamCheckResponse;
 import com.bytebuilder.checker.dto.BulkEmailSpamCheckResponse;
+import com.bytebuilder.checker.dto.LinkAnalysisResult;
+import com.bytebuilder.checker.dto.SpamAnalysisResult;
 import com.bytebuilder.checker.dto.request.EmailSpamCheckRequest;
 import com.bytebuilder.checker.dto.request.BulkEmailSpamCheckRequest;
-import com.bytebuilder.checker.service.SpamEmailDetector.SpamAnalysisResult;
+import com.bytebuilder.checker.service.SpamEmailDetector;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -56,7 +58,7 @@ public class EmailSpamDetectionServiceImpl implements EmailSpamDetectionService 
     }
 
     private List<EmailSpamCheckResponse.LinkAnalysisResult> convertLinkAnalysisResults(
-            List<SpamEmailDetector.LinkAnalysisResult> linkResults) {
+            List<LinkAnalysisResult> linkResults) {
         if (linkResults == null) {
             return new ArrayList<>();
         }

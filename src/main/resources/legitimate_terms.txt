@@ -1,0 +1,24 @@
+company
+business
+service
+product
+customer
+support
+about us
+contact
+privacy
+terms
+policy
+help
+faq
+order
+invoice
+receipt
+confirmation
+welcome
+thank you
+newsletter
+update
+notification
+reminder
+appointment

@@ -20,8 +20,6 @@ virustotal.api.key=your-virustotal-api-key
 virustotal.poll.delay=5000
 logging.level.org.springframework.security=DEBUG
 spring.ai.openai.api-key=your-openai-api-key
-
-# Spam Detection Configuration
 spam.detection.enabled=true
 spam.detection.spam-threshold=0.6
 spam.detection.high-risk-threshold=0.8

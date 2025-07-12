@@ -1,0 +1,10 @@
+(?i).*@.*\\.(tk|ml|ga|cf|gq)$
+(?i).*@.*\\.(xyz|top|site|online)$
+(?i).*@.*\\.(info|biz)$
+(?i).*[0-9]{8,}@.*
+(?i).*[a-z]{20,}@.*
+(?i).*support.*@.*
+(?i).*noreply.*@.*
+(?i).*admin.*@.*
+(?i).*service.*@.*
+(?i).*info.*@.*

@@ -1,5 +1,6 @@
 package com.bytebuilder.checker.service;
 
+import com.bytebuilder.checker.dto.SpamAnalysisResult;
 import com.bytebuilder.checker.exception.EmailNotSentException;
 import jakarta.mail.MessagingException;
 import jakarta.mail.internet.MimeMessage;
@@ -111,7 +112,7 @@ public class EmailServiceImpl implements EmailService {
         log.info("Checking incoming email for spam - Subject: {}, Sender: {}", subject, sender);
         
         try {
-            SpamEmailDetector.SpamAnalysisResult result = spamEmailDetector.analyzeEmail(subject, content, sender, "");
+            SpamAnalysisResult result = spamEmailDetector.analyzeEmail(subject, content, sender, "");
             
             if (result.isSpam()) {
                 log.warn("Spam detected in incoming email - Subject: {}, Sender: {}, Score: {}", 
