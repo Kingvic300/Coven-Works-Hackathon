@@ -37,7 +37,7 @@ public class SpamEmailDetector {
 
     @PostConstruct
     public void loadSpamData() {
-        spamKeywords = loadStrings("spam_keywords.txt");
+        spamKeywords = loadStrings("scan_keywords.txt");
         spamPatterns = loadPatterns("spam_patterns.txt");
         legitimateTerms = loadStrings("legitimate_terms.txt");
         suspiciousSenderPatterns = loadPatterns("suspicious_senders.txt");
